@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lo-Fi Love - TV Girl Memory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pink: #FF9EAA;
+      --blue: #5D8AA8;
+      --bg: #FFF5F7;
+      --text: #2D2D2D;
+      --white: #FFFFFF;
+      --pink-dark: #E88B98;
+      --blue-dark: #4A7A96;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Courier Prime', monospace;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    .font-display { font-family: 'Chonburi', serif; }
+
+    /* CRT Scanline Overlay */
+    .crt-overlay {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px, transparent 1px, transparent 2px);
+      animation: scanlines 0.1s linear infinite;
+    }
+    @keyframes scanlines { 0% { background-position: 0 0; } 100% { background-position: 0 4px; } }
+
+    /* Noise texture */
+    .noise {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9998; opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* Vinyl Animation */
+    .vinyl { animation: spin 4s linear infinite; animation-play-state: paused; }
+    .vinyl.playing { animation-play-state: running; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .vinyl { animation: none; }
+      .crt-overlay { animation: none; }
+    }
+
+    .hard-shadow { box-shadow: 6px 6px 0 var(--text); }
+    
+    /* Memory Card */
+    .memory-card { transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .memory-card:hover { transform: rotate(-3deg) translateY(-8px); }
+
+    .memory-card:hover .card-image { animation: glitch 0.3s ease-in-out; }
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); filter: none; }
+      20% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
+      40% { transform: translate(2px, -2px); filter: hue-rotate(-90deg); }
+      60% { transform: translate(-1px, -1px); }
+      80% { transform: translate(1px, 1px); }
+    }
+
+    /* Sticky note */
+    .sticky-note {
+      background: linear-gradient(135deg, #FFFACD 0%, #F0E68C 100%);
+      box-shadow: 3px 3px 0 var(--text);
+      transform: rotate(-2deg);
+      transition: transform 0.3s ease;
+    }
+    .memory-card:hover .sticky-note { transform: rotate(2deg) translateX(10px); }
+
+    /* Modal */
+    .modal { opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+    .modal.active { opacity: 1; visibility: visible; }
+    .modal-content { transform: scale(0.9) translateY(20px); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .modal.active .modal-content { transform: scale(1) translateY(0); }
+
+    /* Entrance animations */
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* Split background */
+    .split-bg { background: linear-gradient(135deg, var(--pink) 0%, var(--pink) 50%, var(--blue) 50%, var(--blue) 100%); }
+    
+    /* Focus states */
+    .focus-ring:focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
+
+    .float-shape { animation: float 6s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="relative h-screen min-h-[600px] overflow-hidden">
+    <div class="absolute inset-0 split-bg"></div>
+    <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+      <div class="float-shape absolute top-[15%] left-[10%] w-16 h-16 border-4 border-white/30 rounded-full" style="animation-delay: 0s;"></div>
+      <div class="float-shape absolute top-[60%] left-[5%] w-8 h-8 bg-white/20" style="animation-delay: 1s;"></div>
+      <div class="float-shape absolute top-[20%] right-[15%] w-12 h-12 border-4 border-white/30 rotate-45" style="animation-delay: 2s;"></div>
+      <div class="float-shape absolute top-[70%] right-[10%] w-6 h-6 bg-white/20 rounded-full" style="animation-delay: 0.5s;"></div>
+    </div>
+
+    <div class="relative z-10 h-full flex flex-col items-center justify-center px-6">
+      <div class="relative mb-8 cursor-pointer group" id="vinyl-container" role="button" tabindex="0">
+        <div class="vinyl w-40 h-40 md:w-52 md:h-52 rounded-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-4 border-gray-700 relative">
+          <div class="absolute inset-2 rounded-full border border-gray-600/50"></div>
+          <div class="absolute inset-4 rounded-full border border-gray-600/30"></div>
+          <div class="absolute inset-[30%] rounded-full bg-gradient-to-br from-rose-400 to-blue-400 flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-gray-900"></div>
+          </div>
+          <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-white/0 via-white/10 to-white/0"></div>
+        </div>
+        <div class="absolute -right-8 top-1/2 -translate-y-1/2 w-24 h-2 bg-gray-700 rounded-full origin-left transition-transform duration-500 group-hover:rotate-12">
+           <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-gray-600 rounded-full border-2 border-gray-500"></div>
+        </div>
+        <p class="text-center mt-4 text-white/80 text-sm font-bold tracking-wider">CLICK TO PLAY</p>
+      </div>
+
+      <div class="text-center reveal" data-delay="0">
+        <h1 class="font-display text-5xl md:text-7xl lg:text-8xl text-white mb-2 tracking-wide">Lo-Fi Love</h1>
+        <div class="flex items-center justify-center gap-4 text-white/90 text-xl md:text-2xl">
+          <span class="font-display">Alex</span><span class="text-3xl">&</span><span class="font-display">Jordan</span>
+        </div>
+      </div>
+      <p class="mt-6 text-white/80 text-lg md:text-xl max-w-md text-center reveal" data-delay="200">A collection of our favorite moments, pressed on vinyl forever.</p>
+      
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 reveal" data-delay="400">
+        <div class="w-8 h-12 border-2 border-white/50 rounded-full flex justify-center pt-2">
+          <div class="w-1.5 h-3 bg-white/70 rounded-full animate-bounce"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative py-16 md:py-24 px-4 md:px-8">
+    <div class="text-center mb-12 reveal" data-delay="0">
+      <h2 class="font-display text-3xl md:text-4xl text-gray-800 mb-2">Our Memories</h2>
+      <p class="text-gray-600">Click any photo to view full size</p>
+    </div>
+    <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10" id="memory-grid"></div>
+  </main>
+
+  <footer class="relative py-16 px-6 bg-gradient-to-b from-transparent to-rose-100">
+    <div class="max-w-2xl mx-auto text-center reveal" data-delay="0">
+      <div class="inline-block px-8 py-6 bg-white border-2 border-gray-800 hard-shadow relative">
+        <div class="absolute top-2 left-2 text-xs text-gray-400 font-bold">SIDE A</div>
+        <h3 class="font-display text-2xl md:text-3xl mb-4">Liner Notes</h3>
+        <p class="text-gray-600 leading-relaxed mb-4">Thank you for being the melody in my chaos, the harmony in my heart, and the rhythm that keeps me going. Every moment with you is a track worth playing on repeat.</p>
+        <p class="font-display text-lg text-rose-500">Forever yours, A x J</p>
+        <div class="absolute bottom-2 right-2 text-xs text-gray-400 font-bold">2024</div>
+      </div>
+    </div>
+    <div class="mt-12 text-center text-sm text-gray-500"><p>Made with love and lo-fi vibes</p></div>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal fixed inset-0 z-50 flex items-center justify-center p-4" id="lightbox-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="modal-backdrop"></div>
+    <div class="modal-content relative max-w-3xl w-full">
+      <button class="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors focus-ring rounded" id="modal-close" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <div class="bg-white p-4 border-2 border-gray-800 hard-shadow">
+        <div class="relative aspect-[4/3] bg-gray-100 mb-4 overflow-hidden" id="modal-image-container"></div>
+        <div class="sticky-note p-4 inline-block">
+          <p class="text-gray-800 font-bold" id="modal-note"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // FINAL MEMORY DATA
+    const memories = [
+      {
+        id: 1,
+        image: 'images/photo1.jpg', 
+        note: 'Our favorite selfie together. Just us being us.',
+        filter: 'pink'
+      },
+      {
+        id: 2,
+        image: 'images/photo2.jpg',
+        note: 'Capturing memories of memories. Polaroids are magic.',
+        filter: 'blue'
+      },
+      {
+        id: 3,
+        image: 'images/photo3.jpg',
+        note: 'Study dates and holding hands. Best distraction ever.',
+        filter: 'pink'
+      },
+      {
+        id: 4,
+        image: 'images/photo4.jpg',
+        note: 'Connected at the wrist, connected at the heart.',
+        filter: 'blue'
+      },
+      {
+        id: 5,
+        image: 'images/photo5.jpg',
+        note: 'Our little inside joke. "kidney chini" forever.',
+        filter: 'pink'
+      },
+      {
+        id: 6,
+        image: 'images/photo6.jpg',
+        note: 'Cool kids with cool shades. Loving the vibe.',
+        filter: 'blue'
+      }
+    ];
+
+    // DOM Elements
+    const memoryGrid = document.getElementById('memory-grid');
+    const modal = document.getElementById('lightbox-modal');
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalClose = document.getElementById('modal-close');
+    const modalImageContainer = document.getElementById('modal-image-container');
+    const modalNote = document.getElementById('modal-note');
+    const vinylContainer = document.getElementById('vinyl-container');
+    const vinyl = vinylContainer.querySelector('.vinyl');
+
+    // Render Cards
+    function renderMemories() {
+      if (!memoryGrid) return;
+      
+      memoryGrid.innerHTML = memories.map((memory, index) => `
+        <article class="memory-card reveal cursor-pointer" data-id="${memory.id}" data-delay="${index * 100}" tabindex="0" role="button" aria-label="View memory: ${memory.note.substring(0, 30)}...">
+          <div class="bg-white p-3 border-2 border-gray-800 hard-shadow relative">
+            <div class="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+              <img 
+                src="${memory.image}" 
+                alt="Memory ${memory.id}" 
+                class="card-image w-full h-full object-cover ${memory.filter === 'pink' ? 'duotone-pink' : 'duotone-blue'}"
+                loading="lazy"
+              >
+              <div class="absolute inset-0 ${memory.filter === 'pink' ? 'bg-rose-300' : 'bg-blue-300'} mix-blend-multiply opacity-50"></div>
+            </div>
+            <div class="sticky-note mt-4 p-3 -rotate-1">
+              <p class="text-sm text-gray-800 leading-snug">${memory.note}</p>
+            </div>
+            <div class="absolute top-2 right-2 text-xs text-gray-400 font-bold">#${String(memory.id).padStart(2, '0')}</div>
+          </div>
+        </article>
+      `).join('');
+
+      // Add Listeners
+      document.querySelectorAll('.memory-card').forEach(card => {
+        card.addEventListener('click', () => openModal(card.dataset.id));
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openModal(card.dataset.id);
+          }
+        });
+      });
+
+      setTimeout(initReveal, 100);
+    }
+
+    // Modal Functions
+    function openModal(id) {
+      const memory = memories.find(m => m.id === parseInt(id));
+      if (!memory || !modal || !modalImageContainer || !modalNote) return;
+
+      modalImageContainer.innerHTML = `
+        <img src="${memory.image}" alt="Memory ${memory.id}" class="w-full h-full object-cover">
+        <div class="absolute inset-0 ${memory.filter === 'pink' ? 'bg-rose-300' : 'bg-blue-300'} mix-blend-multiply opacity-40"></div>
+      `;
+      modalNote.textContent = memory.note;
+      
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      
+      if (modalClose) modalClose.focus();
+    }
+
+    function closeModal() {
+      if (!modal) return;
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    // Event Listeners
+    if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
+    if (modalClose) modalClose.addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && modal.classList.contains('active')) closeModal();
+    });
+
+    // Vinyl Toggle
+    let isPlaying = false;
+    if (vinylContainer) {
+      vinylContainer.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        if (vinyl) vinyl.classList.toggle('playing', isPlaying);
+      });
+      vinylContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          isPlaying = !isPlaying;
+          if (vinyl) vinyl.classList.toggle('playing', isPlaying);
+        }
+      });
+    }
+
+    // Reveal Animation
+    function initReveal() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const delay = parseInt(entry.target.dataset.delay) || 0;
+            setTimeout(() => entry.target.classList.add('visible'), delay);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderMemories();
+      initReveal();
+    });
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    }
+  </script>
+</body>
+</html>
